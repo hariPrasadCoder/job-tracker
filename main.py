@@ -1,19 +1,20 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, UploadFile, File
 from src.cv_to_text import cv_to_text
 from src.scrape_linkedin import scrape_linkedin
 from src.match_percentage import match_percentage
+import shutil
 
 app = FastAPI()
 
-@app.get("/jobs")
-async def hello():
-    job_title = 'Data Engineer'
-    location = 'New York'
+@app.post("/jobs")
+async def hello(job_title: str, location: str, file: UploadFile = File(...)):
     num_of_pages = 2
-    # f = open('resume.pdf','rb')
+    with open('resume.pdf', 'wb') as buffer:
+        shutil.copyfileobj(file.file, buffer)
+    f = open('resume.pdf','rb')
 
     ## CV to texts
-    CV_Clear = cv_to_text()
+    CV_Clear = cv_to_text(f)
 
     # Scrape linkedin data
     info_table = scrape_linkedin(job_title, location, num_of_pages)

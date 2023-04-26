@@ -1,8 +1,8 @@
 import PyPDF2,pdfplumber
 
-def cv_to_text():
+def cv_to_text(CV_File):
     ## CV to texts
-    CV_File=open('./resume.pdf','rb')
+    # CV_File=open('./resume.pdf','rb')
     Script=PyPDF2.PdfFileReader(CV_File)
     pages=Script.numPages
 
