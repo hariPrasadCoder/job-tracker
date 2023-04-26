@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, UploadFile, File, Form
 from src.cv_to_text import cv_to_text
 from src.scrape_linkedin import scrape_linkedin
 from src.match_percentage import match_percentage
@@ -7,7 +7,7 @@ import shutil
 app = FastAPI()
 
 @app.post("/jobs")
-async def hello(job_title: str, location: str, file: UploadFile = File(...)):
+async def hello(job_title: str = Form(...), location: str = Form(...), file: UploadFile = File(...)):
     num_of_pages = 2
     with open('resume.pdf', 'wb') as buffer:
         shutil.copyfileobj(file.file, buffer)
