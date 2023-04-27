@@ -24,6 +24,6 @@ async def hello(job_title: str = Form(...), location: str = Form(...), file: Upl
     final_info_table = match_percentage(info_table, CV_Clear)
     print(final_info_table)
 
-    final_json = final_info_table.to_json(orient="split")
+    final_json = final_info_table.to_dict(orient="records")
         
     return final_json
