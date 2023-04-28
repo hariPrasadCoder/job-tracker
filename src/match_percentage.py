@@ -7,25 +7,44 @@ from sklearn.metrics.pairwise import cosine_similarity
 def match_percentage(info_table, CV_Clear):
     # Finding match percentage
     headers = {'User-agent' : 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36'}
-    match_percent = []
+    match_percents = []
+    image_links = []
+    locations = []
+    job_descriptions = []
     for l in info_table['Link']: 
         try:
             # extract job description from 2nd webpage (ie, main page for each job post)
             r = requests.get(l, headers=headers)
             soup = BeautifulSoup(r.content, "html.parser")
             job_description = soup.find('div', class_='show-more-less-html__markup show-more-less-html__markup--clamp-after-5').text.replace("\n","")
+
+            image_raw_link = soup.find('div', class_='top-card-layout__card relative p-2 papabear:p-details-container-padding').findAll('img', class_="artdeco-entity-image")[0]['data-delayed-url']
+            image_link = image_raw_link.replace('amp;','')
+
+            location = soup.find('div', class_='topcard__flavor-row').findAll('span',class_='topcard__flavor topcard__flavor--bullet')[0].text.replace("\n","").strip()
             
             # calculate match percentage 
             Match_Test = [CV_Clear,job_description]
             cv = CountVectorizer()
             count_matrix = cv.fit_transform(Match_Test)
             MatchPercentage = cosine_similarity(count_matrix)[0][1]*100
-            match_percent.append(MatchPercentage)
+
+            match_percents.append(MatchPercentage)
+            image_links.append(image_link)
+            locations.append(location)
+            job_descriptions.append(job_description)
         except:
             print('Error with parsing job description')
-            match_percent.append(0)
+            match_percents.append(0)
+            image_links.append('Unable to scrape')
+            locations.append('Unable to scrape')
+            job_descriptions.append('Unable to scrape')
 
-    match_percent = pd.DataFrame(match_percent, columns = ['Matching_percentage'])
+    match_percent = pd.DataFrame()
+    match_percent['Matching_percentage'] = match_percents
+    match_percent['Logo'] = image_links
+    match_percent['Location'] = locations
+    match_percent['Job_description'] = job_descriptions
     final_info_table = pd.concat([info_table, match_percent], axis=1)
     final_info_table = final_info_table.sort_values(by = 'Matching_percentage', axis = 0, ascending=False)
 
