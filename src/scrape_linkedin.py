@@ -11,7 +11,7 @@ def scrape_linkedin(job_title, location, num_of_pages):
     headers = {'User-agent' : 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36'}
 
     for page in range(num_of_pages):
-        getVars = {'keywords' : job_title, 'location' : location ,'sort' : 'date', 'start': str(num_of_pages*10)}
+        getVars = {'keywords' : job_title, 'location' : location ,'sort' : 'date', 'start': str(page*10)}
         url = ('https://www.linkedin.com/jobs/search?' + urllib.parse.urlencode(getVars))
         r = requests.get(url, headers=headers, verify=False)
         html = r.content
@@ -28,6 +28,7 @@ def scrape_linkedin(job_title, location, num_of_pages):
 
     cols = ['Job_title','Company','Job_posted_date','Link']
     info_table = pd.DataFrame(info, columns = cols)
+    info_table = info_table.drop_duplicates(subset=['Job_title', 'Company'])
     # sort by post date
     info_table = info_table.sort_values(by = 'Job_posted_date', ascending = False).reset_index(drop=True)
 

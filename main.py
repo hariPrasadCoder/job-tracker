@@ -8,7 +8,7 @@ app = FastAPI()
 
 @app.post("/jobs")
 async def hello(job_title: str = Form(...), location: str = Form(...), file: UploadFile = File(...)):
-    num_of_pages = 2
+    num_of_pages = 20
     with open('resume.pdf', 'wb') as buffer:
         shutil.copyfileobj(file.file, buffer)
     f = open('resume.pdf','rb')
