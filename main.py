@@ -38,7 +38,7 @@ async def hello(url: str = Form(...)):
     r = requests.get(url, headers=headers)
     soup = BeautifulSoup(r.content, "html.parser")
 
-    job_description = soup.find('div', id='job-details').text
+    job_description = soup.find('div', class_='description__text description__text--rich').text
 
     image_raw_link = soup.find('div', class_='top-card-layout__card relative p-2 papabear:p-details-container-padding').findAll('img', class_="artdeco-entity-image")[0]['data-delayed-url']
     image_link = image_raw_link.replace('amp;','')
