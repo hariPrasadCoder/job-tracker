@@ -51,3 +51,18 @@ Connect to a named session:
 To kill/stop a session, you have two options. One option is to enter the exit command while connected to the session you want to kill. Another option is by using the command:
 
 `tmux kill-session -t session_name`
+
+
+# Supervisor:
+
+## Edit config file
+`sudo vim /etc/supervisor/conf.d/job-tracker.conf`
+
+## After editing restart supervisor
+sudo supervisorctl reread
+sudo supervisorctl update
+sudo supervisorctl restart all
+sudo supervisorctl status
+
+## Check error logs
+`cat -n /var/log/supervisor/fastapi_error.log`
