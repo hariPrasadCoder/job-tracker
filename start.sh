@@ -2,4 +2,4 @@
 
 cd "$(dirname "$0")"
 source venv/bin/activate
-uvicorn main:app --workers=4
+uvicorn main:app --host=0.0.0.0 --workers=4
