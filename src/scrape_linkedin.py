@@ -11,7 +11,7 @@ def scrape_linkedin(job_title, location, num_of_pages):
     headers = {'User-agent' : 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36'}
 
     for page in range(num_of_pages):
-        getVars = {'keywords' : job_title, 'location' : location ,'sort' : 'date', 'start': str(page*10)}
+        getVars = {'keywords' : job_title, 'location' : location ,'sort' : 'date', 'start': str(page*10), 'f_TPR':'r604800'}
         url = ('https://www.linkedin.com/jobs/search?' + urllib.parse.urlencode(getVars))
         r = requests.get(url, headers=headers, verify=False)
         html = r.content
