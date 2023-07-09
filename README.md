@@ -78,7 +78,7 @@ To keep the Uvicorn server running even if you close the terminal or SSH session
 
 3. Run the Uvicorn server as a background process using the following command:
    ```
-   nohup uvicorn main:app --host 0.0.0.0 --port 80 &
+   nohup uvicorn main:app --host 0.0.0.0 --workers=4 &
    ```
    This command uses `nohup` to prevent the process from receiving the hang-up (HUP) signal when the terminal is closed. The `&` at the end runs the process in the background.
 
