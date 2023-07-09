@@ -2,22 +2,30 @@ from fastapi import FastAPI, UploadFile, File, Form
 from src.cv_to_text import cv_to_text
 from src.scrape_linkedin import scrape_linkedin
 from src.match_percentage import match_percentage
-import shutil
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
+from io import BytesIO
+from pdfminer.high_level import extract_text_to_fp
+from pdfminer.layout import LAParams
 
 app = FastAPI()
 
 @app.post("/jobs")
 async def hello(job_title: str = Form(...), location: str = Form(...), file: UploadFile = File(...)):
     num_of_pages = 4
-    with open('resume.pdf', 'wb') as buffer:
-        shutil.copyfileobj(file.file, buffer)
-    f = open('resume.pdf','rb')
 
-    ## CV to texts
-    CV_Clear = cv_to_text(f)
+    pdf_file = BytesIO(await file.read())
+    extracted_text = BytesIO()
+
+    with pdf_file, extracted_text:
+        laparams = LAParams()
+        extract_text_to_fp(pdf_file, extracted_text, laparams=laparams)
+        extracted_text.seek(0)
+        text = extracted_text.read().decode()
+
+    CV_Clear = text.replace("\n","").replace('●', "")
+    print(CV_Clear)
 
     # Scrape linkedin data
     info_table = scrape_linkedin(job_title, location, num_of_pages)
