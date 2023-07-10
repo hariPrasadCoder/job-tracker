@@ -43,6 +43,10 @@ async def hello(job_title: str = Form(...), location: str = Form(...), file: Upl
 async def hello(url: str = Form(...)):
     headers = {'User-agent' : 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36'}
 
+    if url.startswith('https://www.linkedin.com/jobs/collections/'):
+        id = url.split('currentJobId=')[1]
+        url = 'https://www.linkedin.com/jobs/view/' + str(id)
+
     r = requests.get(url, headers=headers)
     soup = BeautifulSoup(r.content, "html.parser")
 
