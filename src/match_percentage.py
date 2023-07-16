@@ -16,7 +16,8 @@ def match_percentage(info_table, CV_Clear):
             # extract job description from 2nd webpage (ie, main page for each job post)
             r = requests.get(l, headers=headers)
             soup = BeautifulSoup(r.content, "html.parser")
-            job_description = soup.find('div', class_='description__text description__text--rich').text.replace("\n","")
+            
+            job_description = str(soup.find('div', class_='description__text description__text--rich').find('div'))
 
             image_raw_link = soup.find('div', class_='top-card-layout__card relative p-2 papabear:p-details-container-padding').findAll('img', class_="artdeco-entity-image")[0]['data-delayed-url']
             image_link = image_raw_link.replace('amp;','')

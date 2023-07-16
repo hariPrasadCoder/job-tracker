@@ -12,9 +12,10 @@ from pdfminer.layout import LAParams
 app = FastAPI()
 
 @app.post("/jobs")
-async def hello(job_title: str = Form(...), location: str = Form(...), file: UploadFile = File(...)):
+async def hello(job_title: str = Form(...), location: str = Form(...), file: UploadFile = File(...), applied_jobs: str = Form(...)):
     num_of_pages = 4
 
+    applied_jobs_list = applied_jobs.split(',')
     pdf_file = BytesIO(await file.read())
     extracted_text = BytesIO()
 
@@ -28,7 +29,7 @@ async def hello(job_title: str = Form(...), location: str = Form(...), file: Upl
     print(CV_Clear)
 
     # Scrape linkedin data
-    info_table = scrape_linkedin(job_title, location, num_of_pages)
+    info_table = scrape_linkedin(job_title, location, num_of_pages, applied_jobs_list)
     print(info_table)
 
     # # Finding match percentage
