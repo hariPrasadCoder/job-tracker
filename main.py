@@ -8,6 +8,13 @@ import pandas as pd
 from io import BytesIO
 from pdfminer.high_level import extract_text_to_fp
 from pdfminer.layout import LAParams
+import re
+
+def extract_currency_values(string):
+    pattern = r"\$\d+(?:\.\d+)?"
+    matches = re.findall(pattern, string)
+    values = [match.strip("$") for match in matches]
+    return values
 
 app = FastAPI()
 
@@ -53,6 +60,12 @@ async def hello(url: str = Form(...)):
 
     job_description = str(soup.find('div', class_='description__text description__text--rich').find('div'))
 
+    salary_range = extract_currency_values(job_description.replace(',',''))
+    if len(salary_range)>0:
+        salary_range = '$'+salary_range[0] + '- $' + salary_range[1]
+    else:
+        salary_range = 'No Salary Info Found'
+
     image_raw_link = soup.find('div', class_='top-card-layout__card relative p-2 papabear:p-details-container-padding').findAll('img', class_="artdeco-entity-image")[0]['data-delayed-url']
     image_link = image_raw_link.replace('amp;','')
 
@@ -69,6 +82,7 @@ async def hello(url: str = Form(...)):
     job_details['job_title'] = [job_title]
     job_details['company_logo'] = [image_link]
     job_details['job_description'] = [job_description]
+    job_details['salary_range'] = [salary_range]
     job_details['location'] = [location]
     job_details['job_link'] = [job_link]
 
