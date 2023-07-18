@@ -92,7 +92,7 @@ async def hello(url: str = Form(...)):
     return job_details
 
 @app.post("/chatgpt")
-async def hello(job_title: str = Form(...), job_desc: str = Form(...), resume: UploadFile = File(...)):
+async def hello(job_title: str = Form(...), job_desc: str = Form(...), resume: UploadFile = File(...), job_link: str = Form(...)):
     pdf_file = BytesIO(await resume.read())
     extracted_text = BytesIO()
 
@@ -149,6 +149,7 @@ async def hello(job_title: str = Form(...), job_desc: str = Form(...), resume: U
     chatgpt = pd.DataFrame()
     chatgpt['pitch'] = [str(pitch)]
     chatgpt['q_a'] = [str(q_a)]
+    chatgpt['job_link'] = [str(job_link)]
 
     print(chatgpt)
 
