@@ -92,7 +92,7 @@ async def hello(url: str = Form(...)):
     return job_details
 
 @app.post("/chatgpt")
-async def hello(job_title: str = Form(...), job_desc: str = Form(...), resume: UploadFile = File(...), job_link: str = Form(...)):
+async def hello(job_title: str = Form(...), job_desc: str = Form(...), resume: UploadFile = File(...), job_link: str = Form(...), key: str = Form(...),):
     pdf_file = BytesIO(await resume.read())
     extracted_text = BytesIO()
 
@@ -105,7 +105,7 @@ async def hello(job_title: str = Form(...), job_desc: str = Form(...), resume: U
     CV_Clear = text.replace("\n","").replace('●', "")
     print(CV_Clear)
 
-    openai.api_key = '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'
+    openai.api_key = key
     messages = [ {"role": "system", "content": 
                 "You are a intelligent assistant."} ]
     
