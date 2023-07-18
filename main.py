@@ -9,6 +9,7 @@ from io import BytesIO
 from pdfminer.high_level import extract_text_to_fp
 from pdfminer.layout import LAParams
 import re
+import openai
 
 def extract_currency_values(string):
     pattern = r"\$\d+(?:\.\d+)?"
@@ -89,3 +90,69 @@ async def hello(url: str = Form(...)):
     job_details = job_details.to_dict(orient="records")
         
     return job_details
+
+@app.post("/chatgpt")
+async def hello(job_title: str = Form(...), job_desc: str = Form(...), resume: UploadFile = File(...)):
+    pdf_file = BytesIO(await resume.read())
+    extracted_text = BytesIO()
+
+    with pdf_file, extracted_text:
+        laparams = LAParams()
+        extract_text_to_fp(pdf_file, extracted_text, laparams=laparams)
+        extracted_text.seek(0)
+        text = extracted_text.read().decode()
+
+    CV_Clear = text.replace("\n","").replace('●', "")
+    print(CV_Clear)
+
+    openai.api_key = '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'
+    messages = [ {"role": "system", "content": 
+                "You are a intelligent assistant."} ]
+    
+    ##====== First Prompt ========
+    message = f"""
+    My resume - {CV_Clear}
+
+    Job description that I am trying to apply - {job_desc}
+
+    Generate a 200 word pitch for me to introduce myself to the interviewer by highlighting the common points between my resume and job description.
+    """
+
+    messages.append(
+            {"role": "user", "content": message},
+        )
+    
+    chat = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo", messages=messages
+        )
+    pitch = chat.choices[0].message.content
+    print(pitch)
+    messages.append({"role": "assistant", "content": pitch})
+
+
+    ##======== Second Prompt =========
+    message = f"""
+    create commonly asked questions in an interview for a {job_title} role and use my resume to answer it
+    """
+
+    messages.append(
+            {"role": "user", "content": message},
+        )
+    
+    chat = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo", messages=messages
+        )
+    q_a = chat.choices[0].message.content
+    print(q_a)
+    messages.append({"role": "assistant", "content": q_a})
+
+    chatgpt = pd.DataFrame()
+    chatgpt['pitch'] = [str(pitch)]
+    chatgpt['q_a'] = [str(q_a)]
+
+    print(chatgpt)
+
+    chatgpt = chatgpt.to_dict(orient="records")
+
+    return chatgpt
+
