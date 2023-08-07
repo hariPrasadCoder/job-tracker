@@ -53,7 +53,7 @@ async def hello(url: str = Form(...)):
     headers = {'User-agent' : 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36'}
 
     if url.startswith('https://www.linkedin.com/jobs/collections/'):
-        id = url.split('currentJobId=')[1]
+        id = url.split('currentJobId=')[1].split('&')[0]
         url = 'https://www.linkedin.com/jobs/view/' + str(id)
 
     r = requests.get(url, headers=headers)
@@ -62,7 +62,7 @@ async def hello(url: str = Form(...)):
     job_description = str(soup.find('div', class_='description__text description__text--rich').find('div'))
 
     salary_range = extract_currency_values(job_description.replace(',',''))
-    if len(salary_range)>0:
+    if len(salary_range)>1:
         salary_range = '$'+salary_range[0] + '- $' + salary_range[1]
     else:
         salary_range = 'No Salary Info Found'
