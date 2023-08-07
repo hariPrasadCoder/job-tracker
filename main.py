@@ -132,7 +132,7 @@ async def hello(job_title: str = Form(...), job_desc: str = Form(...), resume: U
 
     ##======== Second Prompt =========
     message = f"""
-    create commonly asked questions in an interview for a {job_title} role and use my resume to answer it
+    create 5 commonly asked questions in an interview for a {job_title} role and use my resume to answer it
     """
 
     messages.append(
