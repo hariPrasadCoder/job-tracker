@@ -56,6 +56,10 @@ async def hello(url: str = Form(...)):
         id = url.split('currentJobId=')[1].split('&')[0]
         url = 'https://www.linkedin.com/jobs/view/' + str(id)
 
+    elif url.startswith('https://www.linkedin.com/jobs/search/'):
+        id = url.split('currentJobId=')[1].split('&')[0]
+        url = 'https://www.linkedin.com/jobs/view/' + str(id)
+
     r = requests.get(url, headers=headers)
     soup = BeautifulSoup(r.content, "html.parser")
 
