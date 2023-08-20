@@ -22,11 +22,14 @@ def scrape_linkedin(job_title, location, num_of_pages, applied_jobs_list):
             company = str(job.find('h4', class_='base-search-card__subtitle').text.strip())
             post_date = datetime.strptime(job.find('time')['datetime'], '%Y-%m-%d').date()
 
-            link = job.find('a', class_='base-card__full-link')['href']
-            inp = link.split('?')[0].split('/')[-1]
-            inp = ''.join(' ' if not ch.isdigit() else ch for ch in inp).strip()
-            id = inp.split()[-1]
-            link = 'https://www.linkedin.com/jobs/view/' + str(id)
+            try:
+                link = job.find('a', class_='base-card__full-link')['href']
+                inp = link.split('?')[0].split('/')[-1]
+                inp = ''.join(' ' if not ch.isdigit() else ch for ch in inp).strip()
+                id = inp.split()[-1]
+                link = 'https://www.linkedin.com/jobs/view/' + str(id)
+            except:
+                link = 'Error Parsing the link'
             
             info.append([title,company,post_date,link])
         
