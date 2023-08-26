@@ -66,6 +66,6 @@ def match_percentage(info_table, CV_Clear):
     final_info_table = pd.concat([info_table, match_percent], axis=1)
     final_info_table = final_info_table.sort_values(by = 'Matching_percentage', axis = 0, ascending=False)
 
-    # final_info_table = final_info_table.nlargest(10,['Matching_percentage'])
+    final_info_table = final_info_table.nlargest(10,['Matching_percentage'])
 
     return final_info_table
