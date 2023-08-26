@@ -11,10 +11,29 @@ from pdfminer.layout import LAParams
 import re
 import openai
 
-num_of_pages = 4
+num_of_pages = 1
 CV_Clear = ''
 applied_jobs_list = []
-job_titles = ['Data Scientist', 'Data Analyst', 'Software Engineer', 'Data Engineer', 'Machine Learning Engineer', 'Supply Chain', 'Analyst', 'Product Manager', 'Project Manager']
+job_titles = [
+                # 'Data Scientist',
+                # 'Data Analyst', 
+                # 'Software Engineer', 
+                # 'Data Engineer', 
+                # 'Machine Learning Engineer',
+                # 'Supply Chain',
+                # 'Analyst', 
+                'Product Manager', 
+                'Project Manager',
+                'Data Science internship',
+                'Software Enginner internship',
+                'Data Analyst internship',
+                'Data Engineer internship',
+                'Machine Learning Engineer internship',
+                'Product Manager internship',
+                'Project Manager internship',
+                'Analyst internship',
+                'Supply Chain internship'
+                ]
 locations = ['United States', 
              'Austin',
              'San Francisco',
@@ -41,7 +60,7 @@ locations = ['United States',
             #  'Minneapolis',
              'San Antonio',
             #  'Madison',
-            #  'Phoenix',
+             'Phoenix',
             #  'Charlotte',
             #  'Las Vegas',
             #  'Jacksonville',
