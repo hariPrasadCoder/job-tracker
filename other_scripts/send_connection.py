@@ -73,9 +73,9 @@ sleep(2)
 
 text="Your personalised note goes here :)"
 # for i in first_column:
-driver.get('https://www.linkedin.com/in/priya-agarwal-3657a5200/')
+driver.get('https://www.linkedin.com/in/jiawen-ye-87244996/')
 
-sleep(10)
+sleep(5)
 
 
 parent_element = driver.find_element(By.CLASS_NAME, 'scaffold-layout__main')
@@ -115,18 +115,6 @@ send_now_button.click()
 
 sleep(2)
 
-
-# xpath="//main[@id='main']/div[1]/section[1]/div[2]/div[3]/div[1]/button[1]/span[1]"
-# # if check_exists_by_xpath(driver,xpath):
-# driver.find_element(By.XPATH,xpath).click()
-# if check_exists(By.ID,driver,"custom-message"):
-#     driver.find_element(By.ID,"custom-message").send_keys(text)
-#     driver.find_element(By.CSS_SELECTOR,"[aria-label='Send now']").click()
-# else:
-# driver.find_element(By.CSS_SELECTOR,"[aria-label='More actions']").click()
-# if check_exists(By.CSS_SELECTOR,driver,"[data-control-name='follow']"):
-#     driver.find_element(By.CSS_SELECTOR,"[data-control-name='follow']").click()
-# sleep(3)
 print("Done")
 
 

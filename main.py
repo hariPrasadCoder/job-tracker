@@ -2,6 +2,8 @@ from fastapi import FastAPI, UploadFile, File, Form
 from src.cv_to_text import cv_to_text
 from src.scrape_linkedin import scrape_linkedin
 from src.match_percentage import match_percentage
+from src.find_people import find_people
+from src.send_connection import send_connection
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
@@ -10,6 +12,8 @@ from pdfminer.high_level import extract_text_to_fp
 from pdfminer.layout import LAParams
 import re
 import openai
+import urllib
+import random
 
 def extract_currency_values(string):
     pattern = r"\$\d+(?:\.\d+)?"
@@ -161,3 +165,57 @@ async def hello(job_title: str = Form(...), job_desc: str = Form(...), resume: U
 
     return chatgpt
 
+@app.post("/reach_out")
+async def hello(
+                job_urls: str = Form(...), 
+                title_of_person: str = Form(...), 
+                useremail: str = Form(...), 
+                userpassword: str = Form(...), 
+                # receiver_linkedin_url: str = Form(...), 
+                custom_text: str = Form(...)
+                ):
+
+    # Take Company's people page url from Job url
+    applied_jobs_list = job_urls.split(',')
+    company_url_people_list = []
+    for applied_job in applied_jobs_list:
+        headers = {'User-agent' : 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36'}
+
+        if applied_job.startswith('https://www.linkedin.com/jobs/collections/'):
+            id = applied_job.split('currentJobId=')[1].split('&')[0]
+            applied_job = 'https://www.linkedin.com/jobs/view/' + str(id)
+
+        elif applied_job.startswith('https://www.linkedin.com/jobs/search/'):
+            id = applied_job.split('currentJobId=')[1].split('&')[0]
+            applied_job = 'https://www.linkedin.com/jobs/view/' + str(id)
+
+        r = requests.get(applied_job, headers=headers)
+        soup = BeautifulSoup(r.content, "html.parser")
+
+        company_url = soup.find('div', class_='sub-nav-cta__sub-text-container').find('a',class_='sub-nav-cta__optional-url')['href'].split('?')[0]
+
+        getVars = {'keywords' : title_of_person}
+        company_url_people = f'{company_url}/people/?{urllib.parse.urlencode(getVars, safe=",")}'
+
+        company_url_people_list.append(company_url_people)
+
+    # Getting people linkedin urls
+    people_linkedin_url = []
+    for company_url_people in company_url_people_list:
+        user_profiles, driver = find_people(company_url_people, useremail, userpassword)[:10]
+        people_linkedin_url = people_linkedin_url + user_profiles
+
+    print(people_linkedin_url)
+
+    # Sending connection requests to people
+    random.shuffle(people_linkedin_url)
+    requests_send = 0
+    for person_linkedin_url in people_linkedin_url:
+        try:
+            send_connection(person_linkedin_url, useremail, userpassword, custom_text, driver)
+            requests_send += 1
+            if requests_send == 10:
+                break
+        except:
+            print('Error')
+    return "Done"
