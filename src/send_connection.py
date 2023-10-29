@@ -35,7 +35,7 @@ def check_exists(element,driver,sel):
 
     return True
 
-def send_connection(receiver_linkedin_url, useremail, userpassword, custom_text, driver):
+def send_connection(receiver_linkedin_url,custom_text, job_title, company_name,driver):
     # service = Service("src//chromedriver")
     # options = webdriver.ChromeOptions()
     # driver = webdriver.Chrome(service=service, options=options)
@@ -74,6 +74,13 @@ def send_connection(receiver_linkedin_url, useremail, userpassword, custom_text,
 
     parent_element = driver.find_element(By.CLASS_NAME, 'scaffold-layout__main')
 
+    # Locate the <h1> element within the parent_element
+    name = parent_element.find_element(By.TAG_NAME, 'h1')
+
+    # Get the text from the <h1> element
+    name = name.text
+    firstname = name.split()[0]
+
 
     try:
         # Click on "More actions"
@@ -99,7 +106,8 @@ def send_connection(receiver_linkedin_url, useremail, userpassword, custom_text,
 
     # Type text into the note field
     note_field = driver.find_element(By.ID, "custom-message")
-    note_field.send_keys(custom_text)
+    personalized_custom_text = custom_text.replace("{firstname}", firstname).replace("{company_name}", company_name).replace("{job_title}", job_title)
+    note_field.send_keys(personalized_custom_text)
 
     sleep(2)
 

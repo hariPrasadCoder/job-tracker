@@ -167,18 +167,26 @@ async def hello(job_title: str = Form(...), job_desc: str = Form(...), resume: U
 
 @app.post("/reach_out")
 async def hello(
-                job_urls: str = Form(...), 
-                title_of_person: str = Form(...), 
-                useremail: str = Form(...), 
-                userpassword: str = Form(...), 
+                job_urls: str = Form(...), # https://www.linkedin.com/jobs/collections/recommended/?currentJobId=3671617648,https://www.linkedin.com/jobs/collections/recommended/?currentJobId=3731932698
+                job_title: str = Form(...),  # Data Scientist,Data Scientist
+                company_name: str = Form(...),  # Stripe,Etsy
+                title_of_person: str = Form(...), #recruiter
+                useremail: str = Form(...), #hr2514@columbia.edu
+                userpassword: str = Form(...), #hpprasad
                 # receiver_linkedin_url: str = Form(...), 
-                custom_text: str = Form(...)
+                custom_text: str = Form(...) # Hi {firstname}, I'm Hari, I believe that I will be a right fit for the {job_title} at {company_name}. Would you mind passing on my resume to the hiring manager?
                 ):
 
     # Take Company's people page url from Job url
     applied_jobs_list = job_urls.split(',')
-    company_url_people_list = []
-    for applied_job in applied_jobs_list:
+    job_title_list = job_title.split(',')
+    company_name_list = company_name.split(',')
+
+    company_url_people_list = {}
+    for i in range(len(applied_jobs_list)):
+        applied_job = applied_jobs_list[i]
+        job_title = job_title_list[i]
+        company_name = company_name_list[i]
         headers = {'User-agent' : 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36'}
 
         if applied_job.startswith('https://www.linkedin.com/jobs/collections/'):
@@ -197,22 +205,31 @@ async def hello(
         getVars = {'keywords' : title_of_person}
         company_url_people = f'{company_url}/people/?{urllib.parse.urlencode(getVars, safe=",")}'
 
-        company_url_people_list.append(company_url_people)
+        company_url_people_list[i] = [company_url_people,job_title,company_name]
 
     # Getting people linkedin urls
     people_linkedin_url = []
-    for company_url_people in company_url_people_list:
+    for key, value in company_url_people_list.items():
+        company_url_people = value[0]
+        job_title = value[1]
+        company_name = value[2]
+
         user_profiles, driver = find_people(company_url_people, useremail, userpassword)[:10]
-        people_linkedin_url = people_linkedin_url + user_profiles
+
+        for user_profile in user_profiles:
+            people_linkedin_url.append([user_profile, job_title, company_name])
 
     print(people_linkedin_url)
 
     # Sending connection requests to people
     random.shuffle(people_linkedin_url)
     requests_send = 0
-    for person_linkedin_url in people_linkedin_url:
+    for i in people_linkedin_url:
+        person_linkedin_url = i[0]
+        job_title = i[1]
+        company_name = i[2]
         try:
-            send_connection(person_linkedin_url, useremail, userpassword, custom_text, driver)
+            send_connection(person_linkedin_url, custom_text, job_title, company_name, driver)
             requests_send += 1
             if requests_send == 10:
                 break
