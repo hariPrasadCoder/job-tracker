@@ -6,6 +6,14 @@ from src.find_people import find_people
 from src.send_connection import send_connection
 import requests
 from bs4 import BeautifulSoup
+from selenium import webdriver
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.service import Service
+from selenium.common.exceptions import NoSuchElementException, ElementClickInterceptedException
+from selenium.common.exceptions import ElementNotInteractableException
+import time
+from time import sleep
 import pandas as pd
 from io import BytesIO
 from pdfminer.high_level import extract_text_to_fp
@@ -56,37 +64,125 @@ async def hello(job_title: str = Form(...), location: str = Form(...), file: Upl
 async def hello(url: str = Form(...)):
     headers = {'User-agent' : 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36'}
 
-    if url.startswith('https://www.linkedin.com/jobs/collections/'):
-        id = url.split('currentJobId=')[1].split('&')[0]
-        url = 'https://www.linkedin.com/jobs/view/' + str(id)
+    if url.startswith('https://www.linkedin.com/jobs/'):
+        if url.startswith('https://www.linkedin.com/jobs/collections/'):
+            id = url.split('currentJobId=')[1].split('&')[0]
+            url = 'https://www.linkedin.com/jobs/view/' + str(id)
 
-    elif url.startswith('https://www.linkedin.com/jobs/search/'):
-        id = url.split('currentJobId=')[1].split('&')[0]
-        url = 'https://www.linkedin.com/jobs/view/' + str(id)
+        elif url.startswith('https://www.linkedin.com/jobs/search/'):
+            id = url.split('currentJobId=')[1].split('&')[0]
+            url = 'https://www.linkedin.com/jobs/view/' + str(id)
 
-    r = requests.get(url, headers=headers)
-    soup = BeautifulSoup(r.content, "html.parser")
+        r = requests.get(url, headers=headers)
+        soup = BeautifulSoup(r.content, "html.parser")
 
-    job_description = str(soup.find('div', class_='description__text description__text--rich').find('div'))
+        job_description = str(soup.find('div', class_='description__text description__text--rich').find('div'))
 
-    salary_range = extract_currency_values(job_description.replace(',',''))
-    if len(salary_range)>1:
-        salary_range = '$'+salary_range[0] + '- $' + salary_range[1]
+        salary_range = extract_currency_values(job_description.replace(',',''))
+        if len(salary_range)>1:
+            salary_range = '$'+salary_range[0] + '- $' + salary_range[1]
+        else:
+            salary_range = 'No Salary Info Found'
+
+        image_raw_link = soup.find('div', class_='top-card-layout__card relative p-2 papabear:p-details-container-padding').findAll('img', class_="artdeco-entity-image")[0]['data-delayed-url']
+        image_link = image_raw_link.replace('amp;','')
+
+        location = soup.find('div', class_='topcard__flavor-row').findAll('span',class_='topcard__flavor topcard__flavor--bullet')[0].text.replace("\n","").strip()
+
+        company_name = soup.find('div', class_='topcard__flavor-row').find('a',class_='topcard__org-name-link topcard__flavor--black-link').text.replace("\n","").strip()
+
+        job_title = soup.find('h1', class_ = 'top-card-layout__title font-sans text-lg papabear:text-xl font-bold leading-open text-color-text mb-0 topcard__title').text
+
+        job_link = url
+
+
+    elif url.startswith('https://www.glassdoor.com/job-listing'):
+        # Glassdoor scraping logic
+        chrome_options = webdriver.ChromeOptions()
+        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
+        driver.get(url)
+        time.sleep(3)
+
+
+        try:
+            # Try to click the "Show More" button
+            driver.find_element(By.XPATH, '//div[@class="css-1rzz8ht ecgq1xb2"]').click()
+            job_description = driver.find_element(By.XPATH, '//div[@class="desc css-58vpdc ecgq1xb5"]').get_attribute('outerHTML')
+        except ElementNotInteractableException:
+            # If the button is not interactable, extract the job description without clicking
+            job_description = driver.find_element(By.XPATH, '//div[@class="desc css-58vpdc ecgq1xb5"]').get_attribute('outerHTML')
+
+        # Handle the case where estimated salary is not available for all jobs
+        if extract_currency_values(job_description):
+            salary_range = extract_currency_values(job_description.replace(',', ''))
+            if len(salary_range) > 1:
+                salary_range = '$' + salary_range[0] + ' - $' + salary_range[1]
+            else:
+                salary_range = 'No Salary Info Found'
+        else:
+            try:
+                salary_range = driver.find_element(By.XPATH, '//div[@class="css-1v5elnn e11nt52q2"]/span[@class="small css-10zcshf e1v3ed7e1"]').text.replace('K', ',000')
+                salary_range = re.sub(r'\[.*?\]', '', salary_range).strip()
+                if ':' in salary_range:
+                    salary_range = salary_range.split(':')[1]
+            except NoSuchElementException:
+                salary_range = 'No Salary Info Found'
+
+        image_link = driver.find_element(By.XPATH, '//span[@class="css-13u5hxa epu0oo22"]/img').get_attribute('src')
+        
+        location = driver.find_element(By.XPATH, '//div[@class="css-1v5elnn e11nt52q2"]/span[@data-test="location"]').text.strip()
+
+        company_name = driver.find_element(By.XPATH, '//div[@data-test="employer-name"]/div').text.strip().split('\n')[0]
+        
+        job_title = driver.find_element(By.XPATH, '//div[@data-test="job-title"]').text.strip()
+
+        job_link = url
+
+        driver.quit()
+
+
+    elif url.startswith('https://www.indeed.com/viewjob'):
+        # Indeed scraping logic
+        chrome_options = webdriver.ChromeOptions()
+        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
+        driver.get(url)
+        time.sleep(3)
+
+        job_description = driver.find_element(By.CSS_SELECTOR, 'div[class*="jobsearch-JobComponent-description"]').get_attribute('outerHTML')
+        
+        # Handle the case where estimated salary is not available for all jobs
+        try:
+            salary_element = driver.find_element(By.CSS_SELECTOR, 'div#salaryInfoAndJobType span.css-2iqe2o')
+            salary_range = salary_element.text
+        except NoSuchElementException:
+            if extract_currency_values(job_description):
+                salary_values = extract_currency_values(job_description.replace(',', ''))
+                if len(salary_values) > 1:
+                    salary_range = '$' + salary_values[0] + ' - $' + salary_values[1]
+                else:
+                    salary_range = 'No Salary Info Found'
+            else:
+                salary_range = 'No Salary Info Found'
+                
+        image_link = None
+
+        location = driver.find_element(By.CSS_SELECTOR, 'div[data-testid="inlineHeader-companyLocation"] div').text
+        
+        company_name = driver.find_element(By.CSS_SELECTOR, 'span[class*="css-"][class*="e1wnkr"]').text.strip()
+        
+        job_title = driver.find_element(By.CSS_SELECTOR, 'div[class*="jobsearch-JobInfoHeader-title-container"]').text.strip()
+        
+        job_link = url
+
+        driver.quit()
+
+
     else:
-        salary_range = 'No Salary Info Found'
+        return {"error": "Unsupported job URL format"}
 
-    image_raw_link = soup.find('div', class_='top-card-layout__card relative p-2 papabear:p-details-container-padding').findAll('img', class_="artdeco-entity-image")[0]['data-delayed-url']
-    image_link = image_raw_link.replace('amp;','')
 
-    location = soup.find('div', class_='topcard__flavor-row').findAll('span',class_='topcard__flavor topcard__flavor--bullet')[0].text.replace("\n","").strip()
-
-    company_name = soup.find('div', class_='topcard__flavor-row').find('a',class_='topcard__org-name-link topcard__flavor--black-link').text.replace("\n","").strip()
-
-    job_title = soup.find('h1', class_ = 'top-card-layout__title font-sans text-lg papabear:text-xl font-bold leading-open text-color-text mb-0 topcard__title').text
-
-    job_link = url
-
-    job_details = pd.DataFrame(columns = ['company_name', 'job_title', 'company_logo', 'job_description', 'location', 'job_link'])
+    # Create and return job details
+    job_details = pd.DataFrame(columns=['company_name', 'job_title', 'company_logo', 'job_description', 'location', 'job_link'])
     job_details['company_name'] = [company_name]
     job_details['job_title'] = [job_title]
     job_details['company_logo'] = [image_link]
@@ -96,8 +192,9 @@ async def hello(url: str = Form(...)):
     job_details['job_link'] = [job_link]
 
     job_details = job_details.to_dict(orient="records")
-        
-    return job_details
+
+    return job_details    
+
 
 @app.post("/chatgpt")
 async def hello(job_title: str = Form(...), job_desc: str = Form(...), resume: UploadFile = File(...), job_link: str = Form(...), key: str = Form(...),):
