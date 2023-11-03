@@ -269,7 +269,7 @@ async def hello(
                 company_name: str = Form(...),  # Stripe,Etsy
                 title_of_person: str = Form(...), #recruiter
                 useremail: str = Form(...), #hr2514@columbia.edu
-                userpassword: str = Form(...), #hpprasad
+                userpassword: str = Form(...),
                 # receiver_linkedin_url: str = Form(...), 
                 custom_text: str = Form(...) # Hi {firstname}, I'm Hari, I believe that I will be a right fit for the {job_title} at {company_name}. Would you mind passing on my resume to the hiring manager?
                 ):
