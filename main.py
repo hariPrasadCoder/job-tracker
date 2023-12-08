@@ -4,13 +4,10 @@ from src.scrape_linkedin import scrape_linkedin
 from src.match_percentage import match_percentage
 from src.find_people import find_people
 from src.send_connection import send_connection
-from src.skill_matcher_helper_functions import (
-    extract_text_from_pdf_or_doc,
-    extract_text_from_url,
-    preprocess_text,
-    reorder_skills,
-    sort_skills_by_pos,
-    capitalize_words,
+from src.resume_reviewer_helper_functions import (
+    extract_html_from_pdf,
+    generate_resume_review,
+    gen_new_resume
 )
 
 import requests
@@ -246,48 +243,30 @@ async def hello(
             print('Error')
     return "Done"
 
-@app.post("/match_resume")
-async def match_resume(resume: UploadFile = File(...), url: str = Form(...)):
+@app.post("/resume_review")
+async def process_resume(resume: UploadFile = File(...), key: str = Form(...),):
 
-    # resume = 'C:/Users/Pravallika Molleti/JW - job scraper/job-tracker/Pravallika Molleti.pdf'
-    # job_link = 'https://www.linkedin.com/jobs/collections/recommended/?currentJobId=3703879688'
-    try:
-        # Extracting the text from url
-        pdf_file = BytesIO(await resume.read())
-        extracted_text = BytesIO()
-        with pdf_file, extracted_text:
-            laparams = LAParams()
-            extract_text_to_fp(pdf_file, extracted_text, laparams=laparams)
-            extracted_text.seek(0)
-            resume_text = extracted_text.read().decode()
-        # Extracting the text from url
-        job_name, job_description = extract_text_from_url(url)
-        # Preprocessing the data from pdf and url
-        resume_text = preprocess_text(resume_text)
-        job_description = preprocess_text(job_description)
-        matching_skills = []
-        non_matching_skills = []
-        # Split the job description and resume text into sets of skills
-        jd_skills = frozenset(job_description.split())
-        resume_skills = frozenset(resume_text.split())
-        # Find matching skills (skills present in both sets) and non-matching skills (skills in the job description that are not in the resume)
-        matching_skills = jd_skills.intersection(resume_skills)
-        non_matching_skills = jd_skills.difference(resume_skills)
-        # Convert matching and non-matching skills back to lists and remove duplicates
-        matching_skills = list(set(matching_skills))
-        non_matching_skills = list(set(non_matching_skills))
-        # Reorder matching and recommended skills by tf_idf scores
-        ordered_matching_skills = reorder_skills(matching_skills, url)
-        ordered_recommended_skills = reorder_skills(non_matching_skills, url)
-        # Sorting the top skills by pos and tfidf
-        top_10_matching_skills = sort_skills_by_pos(ordered_matching_skills)
-        top_10_recommended_skills = sort_skills_by_pos(ordered_recommended_skills[:30])[:10]
-        more_recommended_skills = list(set(ordered_recommended_skills) - set(top_10_recommended_skills))
-        return {
-            'Matching Skills': capitalize_words(top_10_matching_skills),
-            'Recommended Skills': capitalize_words(top_10_recommended_skills),
-            "More Recommended Skills": capitalize_words(more_recommended_skills)
-        }
-    except Exception as e:
-        print(f"Error in /match_resume: {e}")
-        return {"error": f"Internal Server Error: {e}"}
+    openai.api_key = key
+    messages = [ {"role": "system", "content": 
+                "You are a intelligent assistant."} ]
+
+    #Extract html from pdf    
+    resume_text = await extract_html_from_pdf(resume)
+
+    # Generate resume review
+    fixed_length = 300
+    generated_text = generate_resume_review(resume_text, fixed_length)
+
+    # Generate the new resume
+    new_resume = gen_new_resume(resume_text, generated_text)    
+    
+    
+    chatgpt = pd.DataFrame()
+    chatgpt['new_resume'] = [str(new_resume)]
+   
+
+    print(chatgpt)
+
+    chatgpt = chatgpt.to_dict(orient="records")
+
+    return chatgpt
