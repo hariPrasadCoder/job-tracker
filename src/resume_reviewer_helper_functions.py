@@ -22,7 +22,8 @@ import base64
 
 # openai.api_key = "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"
 
-config = pdfkit.configuration(wkhtmltopdf=r"C:\Users\Pravallika Molleti\AI RESUME REVIEWER\AI-Resume-Reviewer\wkhtmltopdf.exe")
+
+# config = pdfkit.configuration(wkhtmltopdf=r"C:\Users\Pravallika Molleti\AI RESUME REVIEWER\AI-Resume-Reviewer\wkhtmltopdf.exe")
 
 
 #Function to extract HTML from PDF

@@ -2,8 +2,8 @@ from fastapi import FastAPI, UploadFile, File, Form
 from src.cv_to_text import cv_to_text
 from src.scrape_linkedin import scrape_linkedin
 from src.match_percentage import match_percentage
-from src.find_people import find_people
-from src.send_connection import send_connection
+# from src.find_people import find_people
+# from src.send_connection import send_connection
 from src.resume_reviewer_helper_functions import (
     extract_html_from_pdf,
     generate_resume_review,
@@ -171,77 +171,77 @@ async def hello(job_title: str = Form(...), job_desc: str = Form(...), resume: U
 
     return chatgpt
 
-@app.post("/reach_out")
-async def hello(
-                job_urls: str = Form(...), # https://www.linkedin.com/jobs/collections/recommended/?currentJobId=3671617648,https://www.linkedin.com/jobs/collections/recommended/?currentJobId=3731932698
-                job_title: str = Form(...),  # Data Scientist,Data Scientist
-                company_name: str = Form(...),  # Stripe,Etsy
-                title_of_person: str = Form(...), #recruiter
-                useremail: str = Form(...), #hr2514@columbia.edu
-                userpassword: str = Form(...),
-                # receiver_linkedin_url: str = Form(...), 
-                custom_text: str = Form(...) # Hi {firstname}, I'm Hari, I believe that I will be a right fit for the {job_title} at {company_name}. Would you mind passing on my resume to the hiring manager?
-                ):
+# @app.post("/reach_out")
+# async def hello(
+#                 job_urls: str = Form(...), # https://www.linkedin.com/jobs/collections/recommended/?currentJobId=3671617648,https://www.linkedin.com/jobs/collections/recommended/?currentJobId=3731932698
+#                 job_title: str = Form(...),  # Data Scientist,Data Scientist
+#                 company_name: str = Form(...),  # Stripe,Etsy
+#                 title_of_person: str = Form(...), #recruiter
+#                 useremail: str = Form(...), #hr2514@columbia.edu
+#                 userpassword: str = Form(...),
+#                 # receiver_linkedin_url: str = Form(...), 
+#                 custom_text: str = Form(...) # Hi {firstname}, I'm Hari, I believe that I will be a right fit for the {job_title} at {company_name}. Would you mind passing on my resume to the hiring manager?
+#                 ):
 
-    # Take Company's people page url from Job url
-    applied_jobs_list = job_urls.split(',')
-    job_title_list = job_title.split(',')
-    company_name_list = company_name.split(',')
+#     # Take Company's people page url from Job url
+#     applied_jobs_list = job_urls.split(',')
+#     job_title_list = job_title.split(',')
+#     company_name_list = company_name.split(',')
 
-    company_url_people_list = {}
-    for i in range(len(applied_jobs_list)):
-        applied_job = applied_jobs_list[i]
-        job_title = job_title_list[i]
-        company_name = company_name_list[i]
-        headers = {'User-agent' : 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36'}
+#     company_url_people_list = {}
+#     for i in range(len(applied_jobs_list)):
+#         applied_job = applied_jobs_list[i]
+#         job_title = job_title_list[i]
+#         company_name = company_name_list[i]
+#         headers = {'User-agent' : 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36'}
 
-        if applied_job.startswith('https://www.linkedin.com/jobs/collections/'):
-            id = applied_job.split('currentJobId=')[1].split('&')[0]
-            applied_job = 'https://www.linkedin.com/jobs/view/' + str(id)
+#         if applied_job.startswith('https://www.linkedin.com/jobs/collections/'):
+#             id = applied_job.split('currentJobId=')[1].split('&')[0]
+#             applied_job = 'https://www.linkedin.com/jobs/view/' + str(id)
 
-        elif applied_job.startswith('https://www.linkedin.com/jobs/search/'):
-            id = applied_job.split('currentJobId=')[1].split('&')[0]
-            applied_job = 'https://www.linkedin.com/jobs/view/' + str(id)
+#         elif applied_job.startswith('https://www.linkedin.com/jobs/search/'):
+#             id = applied_job.split('currentJobId=')[1].split('&')[0]
+#             applied_job = 'https://www.linkedin.com/jobs/view/' + str(id)
 
-        r = requests.get(applied_job, headers=headers)
-        soup = BeautifulSoup(r.content, "html.parser")
+#         r = requests.get(applied_job, headers=headers)
+#         soup = BeautifulSoup(r.content, "html.parser")
 
-        company_url = soup.find('div', class_='sub-nav-cta__sub-text-container').find('a',class_='sub-nav-cta__optional-url')['href'].split('?')[0]
+#         company_url = soup.find('div', class_='sub-nav-cta__sub-text-container').find('a',class_='sub-nav-cta__optional-url')['href'].split('?')[0]
 
-        getVars = {'keywords' : title_of_person}
-        company_url_people = f'{company_url}/people/?{urllib.parse.urlencode(getVars, safe=",")}'
+#         getVars = {'keywords' : title_of_person}
+#         company_url_people = f'{company_url}/people/?{urllib.parse.urlencode(getVars, safe=",")}'
 
-        company_url_people_list[i] = [company_url_people,job_title,company_name]
+#         company_url_people_list[i] = [company_url_people,job_title,company_name]
 
-    # Getting people linkedin urls
-    people_linkedin_url = []
-    for key, value in company_url_people_list.items():
-        company_url_people = value[0]
-        job_title = value[1]
-        company_name = value[2]
+#     # Getting people linkedin urls
+#     people_linkedin_url = []
+#     for key, value in company_url_people_list.items():
+#         company_url_people = value[0]
+#         job_title = value[1]
+#         company_name = value[2]
 
-        user_profiles, driver = find_people(company_url_people, useremail, userpassword)[:10]
+#         user_profiles, driver = find_people(company_url_people, useremail, userpassword)[:10]
 
-        for user_profile in user_profiles:
-            people_linkedin_url.append([user_profile, job_title, company_name])
+#         for user_profile in user_profiles:
+#             people_linkedin_url.append([user_profile, job_title, company_name])
 
-    print(people_linkedin_url)
+#     print(people_linkedin_url)
 
-    # Sending connection requests to people
-    random.shuffle(people_linkedin_url)
-    requests_send = 0
-    for i in people_linkedin_url:
-        person_linkedin_url = i[0]
-        job_title = i[1]
-        company_name = i[2]
-        try:
-            send_connection(person_linkedin_url, custom_text, job_title, company_name, driver)
-            requests_send += 1
-            if requests_send == 10:
-                break
-        except:
-            print('Error')
-    return "Done"
+#     # Sending connection requests to people
+#     random.shuffle(people_linkedin_url)
+#     requests_send = 0
+#     for i in people_linkedin_url:
+#         person_linkedin_url = i[0]
+#         job_title = i[1]
+#         company_name = i[2]
+#         try:
+#             send_connection(person_linkedin_url, custom_text, job_title, company_name, driver)
+#             requests_send += 1
+#             if requests_send == 10:
+#                 break
+#         except:
+#             print('Error')
+#     return "Done"
 
 @app.post("/resume_review")
 async def process_resume(resume: UploadFile = File(...), key: str = Form(...),):
