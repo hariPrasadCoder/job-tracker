@@ -4,6 +4,12 @@ from src.scrape_linkedin import scrape_linkedin
 from src.match_percentage import match_percentage
 from src.find_people import find_people
 from src.send_connection import send_connection
+from src.resume_reviewer_helper_functions import (
+    extract_html_from_pdf,
+    generate_resume_review,
+    gen_new_resume
+)
+
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
@@ -236,3 +242,31 @@ async def hello(
         except:
             print('Error')
     return "Done"
+
+@app.post("/resume_review")
+async def process_resume(resume: UploadFile = File(...), key: str = Form(...),):
+
+    openai.api_key = key
+    messages = [ {"role": "system", "content": 
+                "You are a intelligent assistant."} ]
+
+    #Extract html from pdf    
+    resume_text = await extract_html_from_pdf(resume)
+
+    # Generate resume review
+    fixed_length = 300
+    generated_text = generate_resume_review(resume_text, fixed_length)
+
+    # Generate the new resume
+    new_resume = gen_new_resume(resume_text, generated_text)    
+    
+    
+    chatgpt = pd.DataFrame()
+    chatgpt['new_resume'] = [str(new_resume)]
+   
+
+    print(chatgpt)
+
+    chatgpt = chatgpt.to_dict(orient="records")
+
+    return chatgpt
