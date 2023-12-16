@@ -7,7 +7,8 @@ from src.send_connection import send_connection
 from src.resume_reviewer_helper_functions import (
     extract_html_from_pdf,
     generate_resume_review,
-    gen_new_resume
+    gen_new_resume,
+    generate_pdf,
 )
 
 import requests
@@ -244,13 +245,10 @@ async def hello(
     return "Done"
 
 @app.post("/resume_review")
-async def process_resume(resume: UploadFile = File(...), key: str = Form(...),):
-
+async def process_resume(resume: UploadFile = File(...), key: str = Form(...)):
     openai.api_key = key
-    messages = [ {"role": "system", "content": 
-                "You are a intelligent assistant."} ]
-
-    #Extract html from pdf    
+    
+    # Extract HTML from PDF
     resume_text = await extract_html_from_pdf(resume)
 
     # Generate resume review
@@ -258,15 +256,11 @@ async def process_resume(resume: UploadFile = File(...), key: str = Form(...),):
     generated_text = generate_resume_review(resume_text, fixed_length)
 
     # Generate the new resume
-    new_resume = gen_new_resume(resume_text, generated_text)    
-    
-    
-    chatgpt = pd.DataFrame()
-    chatgpt['new_resume'] = [str(new_resume)]
-   
+    new_resume = gen_new_resume(resume_text, generated_text)
 
-    print(chatgpt)
+    # Generate PDF from HTML content and get the base64-encoded string
+    generated_pdf_base64 = generate_pdf(new_resume)
 
-    chatgpt = chatgpt.to_dict(orient="records")
-
-    return chatgpt
+    # Return the generated PDF content in a dictionary
+    return {"generated_resume": generated_pdf_base64,
+            "generated_suggestions" : generated_text}

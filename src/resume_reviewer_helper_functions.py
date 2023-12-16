@@ -45,7 +45,7 @@ Act as a career counselor and provide personalized recommendations to improve th
 quality of my resume: '{resume_text}'.  
 All of the categories should have a specific example from resume of how it can be improved:
 
-1. **Summary and Overall Impression:**
+1. **Summary:**
     - analyze and give a personalized example from resume to improve
    - If a summary is not present, suggest adding a brief summary highlighting key achievements and career goals.
 
@@ -107,13 +107,26 @@ def gen_new_resume(resume_text, recommendations):
     prompt = f"""
              The below is my resume:
               '{resume_text}',
-             The below are the suggestions you have to follow on improving the above resume.
+             The below are the suggestions you have to follow on improving the above resume in a professional format which sfter should not require any further edits.
               '{recommendations}'
-             Modify the context of resume_text by following the above recommendations and below suggestions.
-             Make sure sections are arranged according to hierarchy, adding name, details, related profile contacts, links, summary at the top followed by Work Experience, Education (based on the preference), Projects, Skills.
-             Also, make sure the important context or works in the original resume are not excluded and make them detail as per recommendations.
-             and finally Generate the HTML text of the updated resume (HTML of the resume is only i want).
-              """
+             As part of the resume improvement process, please consider the following suggestions to enhance the professionalism and structure of the existing resume:
+
+1. Begin with the provided resume_text and follow these guidelines for modifications:
+   - Maintain the current structure and links of the resume_text.
+   - Ensure proper alignment for sections such as user name, contact details, and related profiles.
+   - Center-align user name, details, and related profile contacts.
+   - Any dates or years like period of time align them to the right of the page.
+   - Keep the hierarchical arrangement with a focus on maintaining the original order.
+
+2. Follow the sequence: Summary, Work Experience, Education, Projects, and Skills(skills always distanced by comma and not on bulleted points) .
+   - Place the suggestions based summary at the top, followed by Work Experience, Education (based on preference), Projects, and Skills.
+   - Do not omit any content from the original resume; include all relevant information and links.
+
+3. Pay special attention to key details from the original resume; elaborate on them based on the recommendations and keep them to points same like parent resume.
+
+4. Generate the HTML text of the updated resume adhering to the provided guidelines.
+
+Please note that the goal is to maintain the structure of the original resume while incorporating professional formatting improvements. Ensure that the final HTML reflects these modifications and give only HTML text """
 
     # Call OpenAI API for chat completion
     response = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=[{"role": "user", "content": prompt}])
@@ -122,6 +135,7 @@ def gen_new_resume(resume_text, recommendations):
     new_resume = response.choices[0].message['content']
     return new_resume
 
+
 # Function to generate PDF from HTML content
 def generate_pdf(html_content, filename="test2_generated_resume.pdf"):
     # Save the HTML content to a temporary file
@@ -129,10 +143,23 @@ def generate_pdf(html_content, filename="test2_generated_resume.pdf"):
     with open(temp_html_path, "w", encoding="utf-8") as file:
         file.write(html_content)
 
+    # Define options for pdfkit
+    options = {
+        'page-size': 'Letter',  # You can adjust the page size (A4, Letter, etc.)
+        'margin-top': '1mm',
+        'margin-right': '1mm',
+        'margin-bottom': '5mm',
+        'margin-left': '1mm',
+    }
+
+    # Generate PDF using pdfkit and return as base64
+    pdf_content = pdfkit.from_file(temp_html_path, False, options=options)
+    pdf_base64 = base64.b64encode(pdf_content).decode("utf-8")
+
     # Clean up temporary HTML file
     os.remove(temp_html_path)
 
-    return pdfkit.from_string(html_content, filename)
+    return pdf_base64
 
 # Utility function to create a download link for binary files
 def get_binary_file_downloader_html(bin_file, label='Download PDF'):
