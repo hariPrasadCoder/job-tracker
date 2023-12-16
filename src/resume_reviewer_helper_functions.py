@@ -42,7 +42,7 @@ def generate_resume_review(resume_text, length=300):
     # Set up the prompt for OpenAI
     prompt = f"""
 Act as a career counselor and provide personalized recommendations to improve the 
-quality of my resume: '{resume_text}'.  
+quality of my resume by extracting the text content from : '{resume_text}'.  
 All of the categories should have a specific example from resume of how it can be improved:
 
 1. **Summary:**
