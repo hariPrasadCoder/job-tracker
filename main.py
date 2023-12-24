@@ -7,8 +7,11 @@ from src.match_percentage import match_percentage
 from src.resume_reviewer_helper_functions import (
     extract_html_from_pdf,
     generate_resume_review,
-    gen_new_resume
+    gen_new_resume,
+    generate_pdf,
 )
+from src.linkedin_content_enhancer import scrape_linkedin_profile, generate_gpt_suggestions
+import json
 
 import requests
 from bs4 import BeautifulSoup
@@ -244,13 +247,10 @@ async def hello(job_title: str = Form(...), job_desc: str = Form(...), resume: U
 #     return "Done"
 
 @app.post("/resume_review")
-async def process_resume(resume: UploadFile = File(...), key: str = Form(...),):
-
+async def process_resume(resume: UploadFile = File(...), key: str = Form(...)):
     openai.api_key = key
-    messages = [ {"role": "system", "content": 
-                "You are a intelligent assistant."} ]
-
-    #Extract html from pdf    
+    
+    # Extract HTML from PDF
     resume_text = await extract_html_from_pdf(resume)
 
     # Generate resume review
@@ -258,15 +258,38 @@ async def process_resume(resume: UploadFile = File(...), key: str = Form(...),):
     generated_text = generate_resume_review(resume_text, fixed_length)
 
     # Generate the new resume
-    new_resume = gen_new_resume(resume_text, generated_text)    
-    
-    
-    chatgpt = pd.DataFrame()
-    chatgpt['new_resume'] = [str(new_resume)]
-   
+    new_resume = gen_new_resume(resume_text, generated_text)
 
-    print(chatgpt)
+    # Generate PDF from HTML content and get the base64-encoded string
+    generated_pdf_base64 = generate_pdf(new_resume)
 
-    chatgpt = chatgpt.to_dict(orient="records")
+    # Return the generated PDF content in a dictionary
+    return {"generated_resume": generated_pdf_base64,
+            "generated_suggestions" : generated_text}
 
-    return chatgpt
+
+@app.post("/linkedin_enhancer")
+async def optimize_linkedin(linkedin_url:str = Form(...), useremail:str = Form(...), userpassword:str = Form(...),key: str = Form(...)):
+    openai.api_key = key
+    profile_data = scrape_linkedin_profile(linkedin_url, useremail, userpassword)
+
+    if profile_data:
+        # Generate GPT suggestions
+        headline_suggestion = generate_gpt_suggestions(profile_data["headline"], "Headline")
+        about_section_suggestion = generate_gpt_suggestions(profile_data["about_section"], "About Section")
+        projects_suggestion = generate_gpt_suggestions(profile_data["projects"], "Projects")
+        feature_me_suggestion = generate_gpt_suggestions(profile_data["feature_me"], "Feature Me Section")
+        education_sec_suggestion = generate_gpt_suggestions(profile_data["education"], "Education")
+        experience_sec_suggestion = generate_gpt_suggestions(profile_data["experience"], "Experience")
+
+        gpt_suggestions = {
+            "headline_suggestion": headline_suggestion,
+            "about_section_suggestion": about_section_suggestion,
+            "projects_suggestion": projects_suggestion,
+            "feature_me_suggestion": feature_me_suggestion,
+            "education_sec_suggestion": education_sec_suggestion,
+            "experience_sec_suggestion": experience_sec_suggestion,
+        }
+
+        return gpt_suggestions
+
