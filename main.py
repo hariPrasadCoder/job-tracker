@@ -10,6 +10,8 @@ from src.resume_reviewer_helper_functions import (
     gen_new_resume,
     generate_pdf,
 )
+from src.linkedin_content_enhancer import scrape_linkedin_profile, generate_gpt_suggestions
+import json
 
 import requests
 from bs4 import BeautifulSoup
@@ -264,3 +266,30 @@ async def process_resume(resume: UploadFile = File(...), key: str = Form(...)):
     # Return the generated PDF content in a dictionary
     return {"generated_resume": generated_pdf_base64,
             "generated_suggestions" : generated_text}
+
+
+@app.post("/linkedin_enhancer")
+async def optimize_linkedin(linkedin_url:str = Form(...), useremail:str = Form(...), userpassword:str = Form(...),key: str = Form(...)):
+    openai.api_key = key
+    profile_data = scrape_linkedin_profile(linkedin_url, useremail, userpassword)
+
+    if profile_data:
+        # Generate GPT suggestions
+        headline_suggestion = generate_gpt_suggestions(profile_data["headline"], "Headline")
+        about_section_suggestion = generate_gpt_suggestions(profile_data["about_section"], "About Section")
+        projects_suggestion = generate_gpt_suggestions(profile_data["projects"], "Projects")
+        feature_me_suggestion = generate_gpt_suggestions(profile_data["feature_me"], "Feature Me Section")
+        education_sec_suggestion = generate_gpt_suggestions(profile_data["education"], "Education")
+        experience_sec_suggestion = generate_gpt_suggestions(profile_data["experience"], "Experience")
+
+        gpt_suggestions = {
+            "headline_suggestion": headline_suggestion,
+            "about_section_suggestion": about_section_suggestion,
+            "projects_suggestion": projects_suggestion,
+            "feature_me_suggestion": feature_me_suggestion,
+            "education_sec_suggestion": education_sec_suggestion,
+            "experience_sec_suggestion": experience_sec_suggestion,
+        }
+
+        return gpt_suggestions
+
