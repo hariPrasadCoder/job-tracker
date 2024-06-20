@@ -12,8 +12,7 @@ from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.action_chains import ActionChains
 
-def find_people(company_url, useremail, userpassword):
-
+def login_linkedin(useremail, userpassword):
     service = Service("src//chromedriver")
     options = webdriver.ChromeOptions()
     # options.add_argument(f'user-agent={user_agent}')
@@ -49,8 +48,12 @@ def find_people(company_url, useremail, userpassword):
 
     sleep(2)
 
-    driver.get(company_url)
+    return driver
 
+
+def find_people(company_url, driver):
+
+    driver.get(company_url)
 
     sleep(5)
 

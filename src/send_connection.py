@@ -112,7 +112,7 @@ def send_connection(receiver_linkedin_url,custom_text, job_title, company_name,d
     sleep(2)
 
     # Click on "Send now"
-    send_now_button = driver.find_element(By.CSS_SELECTOR, '[aria-label="Send now"]')
+    send_now_button = driver.find_element(By.CSS_SELECTOR, '[aria-label="Send invitation"]')
     send_now_button.click()
 
     sleep(2)
