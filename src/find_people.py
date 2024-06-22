@@ -25,6 +25,8 @@ def login_linkedin(useremail, userpassword):
             # path to driver web driver		
     driver.get(url)
 
+    sleep(2)
+
     # Getting the login element
     username = driver.find_element(By.ID,"session_key")
 

@@ -59,14 +59,17 @@ def reach_out(
     people_linkedin_url = []
     driver = login_linkedin(useremail, userpassword)
     for key, value in company_url_people_list.items():
-        company_url_people = value[0]
-        job_title = value[1]
-        company_name = value[2]
+        try:
+            company_url_people = value[0]
+            job_title = value[1]
+            company_name = value[2]
 
-        user_profiles, driver = find_people(company_url_people, driver)[:10]
+            user_profiles, driver = find_people(company_url_people, driver)[:10]
 
-        for user_profile in user_profiles:
-            people_linkedin_url.append([user_profile, job_title, company_name])
+            for user_profile in user_profiles:
+                people_linkedin_url.append([user_profile, job_title, company_name])
+        except:
+            print('Error')
 
     print(people_linkedin_url)
 
@@ -90,7 +93,7 @@ def main():
     print('Hi')
     df = pd.read_csv('jotterwolf_export.csv')
     df = df[df['Status'].str.contains('Interviewing')]
-    df = df.sample(20)
+    df = df.head(10)
 
     reach_out(
         job_urls = list(df['Job Link']),
