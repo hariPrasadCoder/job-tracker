@@ -93,7 +93,7 @@ def main():
     print('Hi')
     df = pd.read_csv('jotterwolf_export.csv')
     df = df[df['Status'].str.contains('Interviewing')]
-    df = df.head(10)
+    df = df.head(40)
 
     reach_out(
         job_urls = list(df['Job Link']),
@@ -103,7 +103,7 @@ def main():
         useremail = 'hr2514@columbia.edu', 
         userpassword = 'hpprasad',
         custom_text = "Hi {firstname}, I'm Hari, I believe that I will be a right fit for the {job_title} at {company_name}. Would you mind passing on my resume to the hiring manager?",
-        requests_send_cnt = 40
+        requests_send_cnt = 50
     )
 
 if __name__ == "__main__":

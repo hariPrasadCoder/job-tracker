@@ -8,7 +8,8 @@ import pandas as pd
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import Select
 
-from selenium.common.exceptions import NoSuchElementException    
+from selenium.common.exceptions import NoSuchElementException 
+from webdriver_manager.chrome import ChromeDriverManager   
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.action_chains import ActionChains
 
@@ -16,7 +17,9 @@ def login_linkedin(useremail, userpassword):
     service = Service("src//chromedriver")
     options = webdriver.ChromeOptions()
     # options.add_argument(f'user-agent={user_agent}')
-    driver = webdriver.Chrome(service=service, options=options)
+    # driver = webdriver.Chrome(service=service, options=options)
+    service = Service(ChromeDriverManager().install())
+    driver = webdriver.Chrome(service=service)
 
     # s=Service('chromedriver')
     # driver = webdriver.Chrome(service=s)
