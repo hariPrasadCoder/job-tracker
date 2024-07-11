@@ -23,15 +23,16 @@ def login_linkedin(useremail, userpassword):
 
     # s=Service('chromedriver')
     # driver = webdriver.Chrome(service=s)
-    url = "http://linkedin.com/"
+    url = "http://linkedin.com/login"
 
             # path to driver web driver		
     driver.get(url)
 
     sleep(2)
 
+
     # Getting the login element
-    username = driver.find_element(By.ID,"session_key")
+    username = driver.find_element(By.ID,"username")
 
     # Sending the keys for username	
     username.send_keys(useremail)
@@ -39,7 +40,7 @@ def login_linkedin(useremail, userpassword):
     sleep(2)
 
     # Getting the password element								
-    password = driver.find_element(By.ID,"session_password")
+    password = driver.find_element(By.ID,"password")
 
     # Sending the keys for password
     password.send_keys(userpassword)
@@ -49,6 +50,7 @@ def login_linkedin(useremail, userpassword):
     actions = ActionChains(driver)
     actions.send_keys(Keys.ENTER)
     actions.perform()
+    
 
 
     sleep(2)
