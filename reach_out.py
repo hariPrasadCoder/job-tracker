@@ -28,32 +28,40 @@ def reach_out(
 
     company_url_people_list = {}
     for i in range(len(applied_jobs_list)):
-        try:
-            applied_job = applied_jobs_list[i]
-            job_title = job_title_list[i]
-            company_name = company_name_list[i]
-            headers = {'User-agent' : 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36'}
+        attempts = 0
+        max_attempts = 10
 
-            if applied_job.startswith('https://www.linkedin.com/jobs/collections/'):
-                id = applied_job.split('currentJobId=')[1].split('&')[0]
-                applied_job = 'https://www.linkedin.com/jobs/view/' + str(id)
+        while attempts < max_attempts:
+            try:
+                applied_job = applied_jobs_list[i]
+                job_title = job_title_list[i]
+                company_name = company_name_list[i]
+                headers = {'User-agent' : 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36'}
 
-            elif applied_job.startswith('https://www.linkedin.com/jobs/search/'):
-                id = applied_job.split('currentJobId=')[1].split('&')[0]
-                applied_job = 'https://www.linkedin.com/jobs/view/' + str(id)
+                if applied_job.startswith('https://www.linkedin.com/jobs/collections/'):
+                    id = applied_job.split('currentJobId=')[1].split('&')[0]
+                    applied_job = 'https://www.linkedin.com/jobs/view/' + str(id)
 
-            r = requests.get(applied_job, headers=headers)
-            soup = BeautifulSoup(r.content, "html.parser")
+                elif applied_job.startswith('https://www.linkedin.com/jobs/search/'):
+                    id = applied_job.split('currentJobId=')[1].split('&')[0]
+                    applied_job = 'https://www.linkedin.com/jobs/view/' + str(id)
 
-            company_url = soup.find('div', class_='sub-nav-cta__sub-text-container').find('a',class_='sub-nav-cta__optional-url')['href'].split('?')[0]
+                r = requests.get(applied_job, headers=headers)
+                soup = BeautifulSoup(r.content, "html.parser")
 
-            getVars = {'keywords' : title_of_person}
-            company_url_people = f'{company_url}/people/?{urllib.parse.urlencode(getVars, safe=",")}'
+                company_url = soup.find('div', class_='sub-nav-cta__sub-text-container').find('a',class_='sub-nav-cta__optional-url')['href'].split('?')[0]
 
-            company_url_people_list[i] = [company_url_people,job_title,company_name]
-            print(company_url_people_list)
-        except:
-            print('Error in - '+company_name_list[i])
+                getVars = {'keywords' : title_of_person}
+                company_url_people = f'{company_url}/people/?{urllib.parse.urlencode(getVars, safe=",")}'
+
+                company_url_people_list[i] = [company_url_people,job_title,company_name]
+                print(company_url_people_list)
+                break
+            except Exception as e:
+                print('Attempting again')
+                attempts += 1
+                if attempts >= max_attempts:
+                    print('Error' + str(e))
 
     # Getting people linkedin urls
     people_linkedin_url = []
@@ -92,8 +100,9 @@ def reach_out(
 def main():
     print('Hi')
     df = pd.read_csv('jotterwolf_export.csv')
+    df['Status'] = df['Status'].fillna('Applied')
     df = df[df['Status'].str.contains('Interviewing')]
-    df = df.head(40)
+    df = df.head(20)
 
     reach_out(
         job_urls = list(df['Job Link']),
@@ -102,8 +111,8 @@ def main():
         title_of_person = 'director', 
         useremail = 'hr2514@columbia.edu', 
         userpassword = 'hpprasad',
-        custom_text = "Hi {firstname}, I'm Hari, I believe that I will be a right fit for the {job_title} at {company_name}. Would you mind passing on my resume to the hiring manager?",
-        requests_send_cnt = 50
+        custom_text = "Hi {firstname}, I'm Hari, I believe that I will be a right fit for the {job_title} at {company_name}. Would you mind passing on my resume to the hiring manager? Your small action may change my life. Thanks!",
+        requests_send_cnt = 40
     )
 
 if __name__ == "__main__":

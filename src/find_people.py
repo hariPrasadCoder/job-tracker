@@ -17,9 +17,9 @@ def login_linkedin(useremail, userpassword):
     service = Service("src//chromedriver")
     options = webdriver.ChromeOptions()
     # options.add_argument(f'user-agent={user_agent}')
-    # driver = webdriver.Chrome(service=service, options=options)
-    service = Service(ChromeDriverManager().install())
-    driver = webdriver.Chrome(service=service)
+    driver = webdriver.Chrome(service=service, options=options)
+    # service = Service(ChromeDriverManager().install())
+    # driver = webdriver.Chrome(service=service)
 
     # s=Service('chromedriver')
     # driver = webdriver.Chrome(service=s)

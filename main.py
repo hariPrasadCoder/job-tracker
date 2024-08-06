@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, Form
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from src.cv_to_text import cv_to_text
 from src.scrape_linkedin import scrape_linkedin
 from src.match_percentage import match_percentage
@@ -60,52 +60,61 @@ async def hello(job_title: str = Form(...), location: str = Form(...), file: Upl
 
 @app.post("/extract_jobinfo")
 async def hello(url: str = Form(...)):
-    headers = {'User-agent' : 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36'}
+    headers = {'User-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36'}
+    attempts = 0
+    max_attempts = 10
 
-    if url.startswith('https://www.linkedin.com/jobs/collections/'):
-        id = url.split('currentJobId=')[1].split('&')[0]
-        url = 'https://www.linkedin.com/jobs/view/' + str(id)
-    elif url.startswith('https://www.linkedin.com/jobs/search/'):
-        id = url.split('currentJobId=')[1].split('&')[0]
-        url = 'https://www.linkedin.com/jobs/view/' + str(id)
-    elif url.startswith('https://www.linkedin.com/jobs/view/'):
-        id = url.split('https://www.linkedin.com/jobs/view/')[1].split('/')[0]
-        url = 'https://www.linkedin.com/jobs/view/' + str(id)
+    while attempts < max_attempts:
+        try:
+            # URL processing
+            if url.startswith('https://www.linkedin.com/jobs/collections/'):
+                id = url.split('currentJobId=')[1].split('&')[0]
+                url = f'https://www.linkedin.com/jobs/view/{id}'
+            elif url.startswith('https://www.linkedin.com/jobs/search/'):
+                id = url.split('currentJobId=')[1].split('&')[0]
+                url = f'https://www.linkedin.com/jobs/view/{id}'
+            elif url.startswith('https://www.linkedin.com/jobs/view/'):
+                id = url.split('https://www.linkedin.com/jobs/view/')[1].split('/')[0]
+                url = f'https://www.linkedin.com/jobs/view/{id}'
 
-    r = requests.get(url, headers=headers)
-    soup = BeautifulSoup(r.content, "html.parser")
+            r = requests.get(url, headers=headers)
 
-    job_description = str(soup.find('div', class_='description__text description__text--rich').find('div'))
+            soup = BeautifulSoup(r.content, "html.parser")
 
-    salary_range = extract_currency_values(job_description.replace(',',''))
-    if len(salary_range)>1:
-        salary_range = '$'+salary_range[0] + '- $' + salary_range[1]
-    else:
-        salary_range = 'No Salary Info Found'
+            # Parse job details
+            job_description = str(soup.find('div', class_='description__text description__text--rich').find('div'))
+            
+            salary_range = extract_currency_values(job_description.replace(',',''))
+            if len(salary_range) > 1:
+                salary_range = f'${salary_range[0]} - ${salary_range[1]}'
+            else:
+                salary_range = 'No Salary Info Found'
 
-    image_raw_link = soup.find('div', class_='top-card-layout__card relative p-2 papabear:p-details-container-padding').findAll('img', class_="artdeco-entity-image")[0]['data-delayed-url']
-    image_link = image_raw_link.replace('amp;','')
+            image_raw_link = soup.find('div', class_='top-card-layout__card relative p-2 papabear:p-details-container-padding').findAll('img', class_="artdeco-entity-image")[0]['data-delayed-url']
+            image_link = image_raw_link.replace('amp;','')
 
-    location = soup.find('div', class_='topcard__flavor-row').findAll('span',class_='topcard__flavor topcard__flavor--bullet')[0].text.replace("\n","").strip()
+            location = soup.find('div', class_='topcard__flavor-row').findAll('span', class_='topcard__flavor topcard__flavor--bullet')[0].text.replace("\n","").strip()
+            company_name = soup.find('div', class_='topcard__flavor-row').find('a', class_='topcard__org-name-link topcard__flavor--black-link').text.replace("\n","").strip()
+            job_title = soup.find('h1', class_='top-card-layout__title font-sans text-lg papabear:text-xl font-bold leading-open text-color-text mb-0 topcard__title').text
 
-    company_name = soup.find('div', class_='topcard__flavor-row').find('a',class_='topcard__org-name-link topcard__flavor--black-link').text.replace("\n","").strip()
+            job_details = pd.DataFrame({
+                'company_name': [company_name],
+                'job_title': [job_title],
+                'company_logo': [image_link],
+                'job_description': [job_description],
+                'salary_range': [salary_range],
+                'location': [location],
+                'job_link': [url]
+            })
+            print(job_details)
 
-    job_title = soup.find('h1', class_ = 'top-card-layout__title font-sans text-lg papabear:text-xl font-bold leading-open text-color-text mb-0 topcard__title').text
+            return job_details.to_dict(orient="records")
 
-    job_link = url
-
-    job_details = pd.DataFrame(columns = ['company_name', 'job_title', 'company_logo', 'job_description', 'location', 'job_link'])
-    job_details['company_name'] = [company_name]
-    job_details['job_title'] = [job_title]
-    job_details['company_logo'] = [image_link]
-    job_details['job_description'] = [job_description]
-    job_details['salary_range'] = [salary_range]
-    job_details['location'] = [location]
-    job_details['job_link'] = [job_link]
-
-    job_details = job_details.to_dict(orient="records")
-        
-    return job_details
+        except Exception as e:
+            print('Attempting again')
+            attempts += 1
+            if attempts >= max_attempts:
+                raise HTTPException(status_code=500, detail=f"Failed to retrieve job data after {max_attempts} attempts: {str(e)}")
 
 @app.post("/chatgpt")
 async def hello(job_title: str = Form(...), job_desc: str = Form(...), resume: UploadFile = File(...), job_link: str = Form(...), key: str = Form(...),):
